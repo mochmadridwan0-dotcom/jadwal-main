@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jadwal Main</title>
+<style>
+*{box-sizing:border-box;font-family:Arial,sans-serif}
+body{margin:0;background:#f2f4f7;color:#222}
+header{background:#2196f3;color:#fff;padding:20px;text-align:center}
+.container{max-width:600px;margin:20px auto;padding:15px}
+.card{background:#fff;padding:18px;margin-bottom:15px;border-radius:15px;box-shadow:0 3px 10px #0001}
+input,button{width:100%;padding:12px;margin-top:8px;margin-bottom:12px;border-radius:8px;border:1px solid #ccc;font-size:15px}
+button{background:#2196f3;color:#fff;border:0;font-weight:bold}
+.tabs{display:flex;gap:8px}.tabs button{flex:1}
+.jadwal{background:#f8f9fa;border-left:5px solid #2196f3;padding:12px;margin:10px 0;border-radius:8px}
+.hapus{background:#e53935}.kosong{text-align:center;color:#777}
+</style>
+</head>
+<body>
+<header><h1>🎮 Jadwal Main</h1><p>Atur jadwal main mingguan & bulanan</p></header>
+<div class="container">
+<div class="card">
+<h2>➕ Tambah Jadwal</h2>
+<label>Tanggal</label><input type="date" id="tanggal">
+<label>Jam</label><input type="time" id="jam">
+<label>Tempat</label><input type="text" id="tempat" placeholder="Contoh: Lapangan">
+<label>Kegiatan</label><input type="text" id="kegiatan" placeholder="Contoh: Main futsal">
+<button onclick="tambahJadwal()">Simpan Jadwal</button>
+</div>
+<div class="card"><div class="tabs">
+<button onclick="tampilkan('minggu')">📅 Minggu</button>
+<button onclick="tampilkan('bulan')">🗓️ Bulan</button>
+</div></div>
+<div class="card"><h2 id="judul">Jadwal Minggu Ini</h2><div id="daftar"></div></div>
+</div>
+<script>
+let jadwal=JSON.parse(localStorage.getItem("jadwalMain"))||[];
+function tambahJadwal(){
+ let tanggal=document.getElementById("tanggal").value,jam=document.getElementById("jam").value,
+ tempat=document.getElementById("tempat").value,kegiatan=document.getElementById("kegiatan").value;
+ if(!tanggal||!jam||!tempat||!kegiatan){alert("Lengkapi semua data!");return}
+ jadwal.push({tanggal,jam,tempat,kegiatan});
+ jadwal.sort((a,b)=>(a.tanggal+a.jam).localeCompare(b.tanggal+b.jam));
+ localStorage.setItem("jadwalMain",JSON.stringify(jadwal));
+ ["tanggal","jam","tempat","kegiatan"].forEach(id=>document.getElementById(id).value="");
+ tampilkan("minggu");
+}
+function formatTanggal(t){
+ return new Date(t+"T00:00:00").toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+}
+function hapusJadwal(i){
+ if(confirm("Hapus jadwal ini?")){jadwal.splice(i,1);localStorage.setItem("jadwalMain",JSON.stringify(jadwal));tampilkan("minggu")}
+}
+function tampilkan(mode){
+ let daftar=document.getElementById("daftar"),judul=document.getElementById("judul");daftar.innerHTML="";
+ let sekarang=new Date(),hasil=[];
+ if(mode==="minggu"){
+  judul.innerText="Jadwal Minggu Ini";
+  let hari=sekarang.getDay(),senin=new Date(sekarang);
+  senin.setDate(sekarang.getDate()-(hari===0?6:hari-1));
+  let mingguDepan=new Date(senin);mingguDepan.setDate(senin.getDate()+6);
+  hasil=jadwal.filter(x=>{let d=new Date(x.tanggal+"T00:00:00");return d>=senin&&d<=mingguDepan});
+ }else{
+  judul.innerText="Jadwal Bulan "+sekarang.toLocaleDateString("id-ID",{month:"long",year:"numeric"});
+  let b=sekarang.getMonth(),t=sekarang.getFullYear();
+  hasil=jadwal.filter(x=>{let d=new Date(x.tanggal+"T00:00:00");return d.getMonth()===b&&d.getFullYear()===t});
+ }
+ if(!hasil.length){daftar.innerHTML='<p class="kosong">Belum ada jadwal.</p>';return}
+ hasil.forEach(x=>{
+  let i=jadwal.indexOf(x);
+  daftar.innerHTML+=`<div class="jadwal"><b>🎮 ${x.kegiatan}</b><p>📅 ${formatTanggal(x.tanggal)}</p><p>⏰ ${x.jam}</p><p>📍 ${x.tempat}</p><button class="hapus" onclick="hapusJadwal(${i})">🗑️ Hapus</button></div>`;
+ });
+}
+tampilkan("minggu");
+</script>
+</body>
+</html>
